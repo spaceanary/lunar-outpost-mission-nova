@@ -1513,6 +1513,18 @@ function App() {
                 ☀️ Go to Mission 01
               </button>
             )}
+            {selected === 'communications' && (
+              <div className="nova-system-training">
+                <strong>📡 MISSION 03 · THE LAST SIGNAL</strong>
+                <p>
+                  Restore contact with Earth. Investigate NASA communications,
+                  align the antenna, and prioritize critical crew messages.
+                </p>
+                <button className="control-primary" onClick={beginMission03}>
+                  🚀 Start Mission 03 Training
+                </button>
+              </div>
+            )}
             <button
               className="control-primary"
               onClick={() => setSystemInfoOpen(false)}
