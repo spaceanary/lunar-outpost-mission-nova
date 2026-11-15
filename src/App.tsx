@@ -64,6 +64,39 @@ const nasaEvidence = [
 // Original lightweight vector mascots, drawn in SVG; no external images or packages.
 // Flicker = flare, Bloop = CME, Zip & Zap = energetic particles, NOVA = mission guide.
 function EvidenceMascots({ kind }: { kind: number }) {
+  // Academy portraits use one distinct mascot per character.
+  if (kind === 3 || kind === 4)
+    return (
+      <svg className="nova-mascot-svg" viewBox="0 0 120 66" role="img"
+        aria-label={kind === 3 ? 'Flicker the smiling yellow solar flare' : 'Bloop the smiling blue coronal mass ejection cloud'}>
+        {kind === 3 ? (
+          <g transform="translate(60 33)">
+            {Array.from({ length: 12 }, (_, i) => (
+              <path key={i} d="M0 -23 Q-7 -33 0 -36 Q7 -33 0 -23"
+                transform={`rotate(${i * 30})`} fill="#ffb32b" stroke="#ffdf62" strokeWidth="1" />
+            ))}
+            <circle r="23" fill="#ffdd51" stroke="#ff9b28" strokeWidth="2" />
+            <circle cx="-8" cy="-3" r="2.5" fill="#56351f" />
+            <circle cx="8" cy="-3" r="2.5" fill="#56351f" />
+            <path d="M-8 7 Q0 15 8 7" stroke="#56351f" strokeWidth="2.5"
+              fill="none" strokeLinecap="round" />
+            <circle cx="-14" cy="5" r="4" fill="#ff9b76" opacity=".75" />
+            <circle cx="14" cy="5" r="4" fill="#ff9b76" opacity=".75" />
+          </g>
+        ) : (
+          <g transform="translate(60 33)">
+            <path d="M-28 9 Q-37 -3 -23 -12 Q-25 -26 -8 -24 Q5 -36 18 -20 Q34 -22 32 -6 Q41 11 24 19 Q5 29 -17 20 Q-29 22 -28 9Z"
+              fill="#64d9ef" stroke="#2789c7" strokeWidth="2.5" />
+            <circle cx="-9" cy="-2" r="2.5" fill="#183b66" />
+            <circle cx="10" cy="-2" r="2.5" fill="#183b66" />
+            <path d="M-7 8 Q1 15 10 7" stroke="#183b66" strokeWidth="2.3"
+              fill="none" strokeLinecap="round" />
+            <circle cx="-17" cy="6" r="4" fill="#ffadbc" opacity=".8" />
+            <circle cx="19" cy="6" r="4" fill="#ffadbc" opacity=".8" />
+          </g>
+        )}
+      </svg>
+    );
   if (kind === 0)
     return (
       <svg
@@ -443,6 +476,7 @@ function App() {
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(20);
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const musicEnabledRef = useRef(true);
   const [activeMission, setActiveMission] = useState<1 | 2>(1);
@@ -565,6 +599,14 @@ function App() {
     void audio.play().catch((error) => {
       setMusicStarted(false);
       console.warn('Mission NOVA music playback blocked:', error);
+    });
+  }
+
+  function adjustMusicVolume(delta: number) {
+    setMusicVolume((current) => {
+      const next = Math.max(0, Math.min(100, current + delta));
+      if (musicRef.current) musicRef.current.volume = next / 100;
+      return next;
     });
   }
 
@@ -766,6 +808,18 @@ function App() {
           >
             {musicStarted ? '🎵 Music On' : musicEnabled ? '🎵 Music Ready' : '🎵 Music Off'}
           </button>
+          <div role="group" aria-label="Background music volume" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button type="button" className="voice-toggle" onClick={() => adjustMusicVolume(-10)}
+              disabled={musicVolume === 0} aria-label="Decrease music volume" title="Decrease music volume"
+              style={{ padding: '8px 10px' }}>−</button>
+            <span aria-live="polite" aria-label={`Music volume ${musicVolume} percent`}
+              style={{ color: '#eafe07', minWidth: 36, textAlign: 'center', fontSize: 13, fontWeight: 700 }}>
+              {musicVolume}%
+            </span>
+            <button type="button" className="voice-toggle" onClick={() => adjustMusicVolume(10)}
+              disabled={musicVolume === 100} aria-label="Increase music volume" title="Increase music volume"
+              style={{ padding: '8px 10px' }}>+</button>
+          </div>
           <button
             type="button"
             className="voice-toggle"
@@ -881,7 +935,7 @@ function App() {
                   >
                     <span className="academy-portrait" aria-hidden="true">
                       {index < 3 ? (
-                        <EvidenceMascots kind={index === 2 ? 1 : 0} />
+                        <EvidenceMascots kind={index === 2 ? 1 : index === 0 ? 3 : 4} />
                       ) : (
                         <span className="academy-emoji">{member.icon}</span>
                       )}
