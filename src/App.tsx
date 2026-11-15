@@ -971,6 +971,13 @@ function App() {
             className="voice-toggle"
             onClick={beginMission02}
           >
+          ☀️ Mission 01
+          </button>
+          <button 
+            type="button"
+            className="voice-toggle"
+            onClick={beginMission03}
+            >
             ⚡ Mission 02
           </button>
           <button
@@ -978,9 +985,9 @@ function App() {
             className="voice-toggle"
             onClick={beginMission01}
           >
-            ☀️ Mission 01
+     
+          📡 Mission 03
           </button>
-          <button type="button" className="voice-toggle" onClick={beginMission03}>📡 Mission 03</button>
           {academyComplete && activeMission === 1 && (
             <button
               type="button"
