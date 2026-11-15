@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import LunarScene, { type LocationId } from './LunarScene';
 import Mission02, { initialM2, type M2Resources } from './Mission02';
+import Mission03, { initialM3, type M3Resources } from './Mission03';
 import './App.css';
 
 type Resources = {
@@ -458,12 +459,26 @@ const voiceProfiles: Record<
 
 const introNarration = `Hello, future astronaut! I'm NOVA, your mission training assistant. Welcome to Lunar Outpost, a simulation of humanity's future home on the Moon. You've been invited to join our Junior Astronaut Training Academy. Your mission is to learn how to keep a lunar outpost safe, powered, and ready for exploration. Living on the Moon isn't easy. Every drop of water, every breath of oxygen, and every watt of electricity matters. You'll investigate solar storms, manage limited resources, and make decisions that could protect your crew. Real NASA missions inspire these challenges, but our lunar scenarios are simulations. Are you ready to think like an astronaut? Your training begins now.`;
 
-type Screen = 'intro' | 'outpost' | 'mission01' | 'mission02';
+
+// Each NOVA line has a stable filename derived from the exact spoken text.
+// Place ElevenLabs recordings in public/nova-voice/ using the recording manifest.
+function novaClipName(text: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `/nova-voice/nova-${(hash >>> 0).toString(16).padStart(8, '0')}.mp3`;
+}
+
+type Screen = 'intro' | 'outpost' | 'mission01' | 'mission02' | 'mission03';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('intro');
   const [introPlaying, setIntroPlaying] = useState(false);
   const introAudioRef = useRef<HTMLAudioElement | null>(null);
+  const novaAudioRef = useRef<HTMLAudioElement | null>(null);
+  const narrationActiveRef = useRef(false);
   const speechRunRef = useRef(0);
   const [selected, setSelected] = useState<LocationId | null>(null);
   const [systemInfoOpen, setSystemInfoOpen] = useState(false);
@@ -484,14 +499,17 @@ function App() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
-  const [musicVolume, setMusicVolume] = useState(20);
+  const [musicVolume, setMusicVolume] = useState(10);
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const musicEnabledRef = useRef(true);
-  const [activeMission, setActiveMission] = useState<1 | 2>(1);
+  const [activeMission, setActiveMission] = useState<1 | 2 | 3>(1);
   const [mission02Resources, setMission02Resources] =
     useState<M2Resources>(initialM2);
   const [mission02Unlocked, setMission02Unlocked] = useState(false);
   const [mission02Run, setMission02Run] = useState(0);
+  const [mission03Resources, setMission03Resources] = useState<M3Resources>(initialM3);
+  const [mission03Unlocked, setMission03Unlocked] = useState(false);
+  const [mission03Run, setMission03Run] = useState(0);
 
   const decision = decisionIndex !== null ? choices[decisionIndex] : null;
 
@@ -505,14 +523,54 @@ function App() {
       introAudioRef.current.pause();
       introAudioRef.current.currentTime = 0;
     }
+    if (novaAudioRef.current) {
+      novaAudioRef.current.pause();
+      novaAudioRef.current.currentTime = 0;
+    }
+    narrationActiveRef.current = false;
+    syncMusicVolume(false);
     setIntroPlaying(false);
   }
 
+  function syncMusicVolume(speaking: boolean) {
+    if (musicRef.current) musicRef.current.volume = (speaking ? Math.min(musicVolume, 3) : musicVolume) / 100;
+  }
+
   function speak(text: string, force = false, speaker: Speaker = 'NOVA') {
-    if ((!voiceEnabled && !force) || !('speechSynthesis' in window)) return;
-
+    if (!voiceEnabled && !force) return;
     stopNarration();
+    const run = speechRunRef.current;
 
+    // Use the same prerecorded ElevenLabs voice for NOVA everywhere.
+    // Until a clip is uploaded, the existing browser voice remains a fallback.
+    if (speaker === 'NOVA') {
+      const audio = novaAudioRef.current;
+      if (audio) {
+        const url = novaClipName(text);
+        void fetch(url, { method: 'HEAD' }).then((response) => {
+          if (run !== speechRunRef.current) return;
+          if (!response.ok || !response.headers.get('content-type')?.includes('audio')) {
+            browserSpeak(); return;
+          }
+          audio.src = url;
+          audio.currentTime = 0;
+          audio.onended = () => {
+            if (run === speechRunRef.current) { narrationActiveRef.current = false; syncMusicVolume(false); }
+          };
+          audio.onerror = () => { if (run === speechRunRef.current) browserSpeak(); };
+          narrationActiveRef.current = true;
+          syncMusicVolume(true);
+          void audio.play().catch(() => { if (run === speechRunRef.current) browserSpeak(); });
+        }).catch(() => { if (run === speechRunRef.current) browserSpeak(); });
+        return;
+      }
+    }
+    browserSpeak();
+
+    function browserSpeak() {
+      if (run !== speechRunRef.current || !('speechSynthesis' in window)) return;
+    narrationActiveRef.current = true;
+    syncMusicVolume(true);
     const utterance = new SpeechSynthesisUtterance(text);
     const profile = voiceProfiles[speaker];
     utterance.rate = profile.rate;
@@ -537,10 +595,10 @@ function App() {
         : (englishVoices[profile.voiceIndex % englishVoices.length]);
     }
 
-    const run = speechRunRef.current;
-    utterance.onend = () => { if (run === speechRunRef.current) setIntroPlaying(false); };
-    utterance.onerror = () => { if (run === speechRunRef.current) setIntroPlaying(false); };
+    utterance.onend = () => { if (run === speechRunRef.current) { narrationActiveRef.current = false; syncMusicVolume(false); setIntroPlaying(false); } };
+    utterance.onerror = () => { if (run === speechRunRef.current) { narrationActiveRef.current = false; syncMusicVolume(false); setIntroPlaying(false); } };
     window.speechSynthesis.speak(utterance);
+    }
   }
 
   useEffect(() => {
@@ -557,7 +615,7 @@ function App() {
   useEffect(() => {
     const audio = musicRef.current;
     if (!audio) return;
-    audio.volume = 0.2;
+    audio.volume = 0.1;
 
     const seekPastIntro = () => {
       if (audio.currentTime < 14) audio.currentTime = 14;
@@ -622,7 +680,9 @@ function App() {
         if (!response.ok || !response.headers.get('content-type')?.includes('audio')) {
           fallback(); return;
         }
-        audio.onended = () => { if (run === speechRunRef.current) setIntroPlaying(false); };
+        narrationActiveRef.current = true;
+        syncMusicVolume(true);
+        audio.onended = () => { if (run === speechRunRef.current) { narrationActiveRef.current = false; syncMusicVolume(false); setIntroPlaying(false); } };
         audio.onerror = fallback;
         setIntroPlaying(true);
         void audio.play().catch(fallback);
@@ -666,7 +726,7 @@ function App() {
   function adjustMusicVolume(delta: number) {
     setMusicVolume((current) => {
       const next = Math.max(0, Math.min(100, current + delta));
-      if (musicRef.current) musicRef.current.volume = next / 100;
+      if (musicRef.current) musicRef.current.volume = (narrationActiveRef.current ? Math.min(next, 3) : next) / 100;
       return next;
     });
   }
@@ -776,7 +836,7 @@ function App() {
 
   function closeWisdom() {
     setShowWisdom(false);
-    window.speechSynthesis?.cancel();
+    stopNarration();
   }
 
   function beginMission02() {
@@ -791,6 +851,18 @@ function App() {
     speak(
       'Mission two. Power Under Pressure. An electrical fault is draining our lunar outpost. We must protect breathable air, water and the crew. Here is some training for you. Investigate real NASA history to get some knowledge on how to manage the crisis.'
     );
+  }
+
+  function beginMission03() {
+    stopNarration();
+    setScreen('mission03');
+    setActiveMission(3);
+    setMission03Resources({ ...initialM3 });
+    setMission03Run((n) => n + 1);
+    setShowWisdom(false);
+    setSystemInfoOpen(false);
+    setSelected(null);
+    speak('Mission three. The Last Signal. Our simulated lunar outpost has lost contact with Earth. Investigate NASA communication science, align the antenna, and protect your crew.');
   }
 
   function beginMission01() {
@@ -847,6 +919,7 @@ function App() {
   return (
     <main className="control-app">
       <audio ref={introAudioRef} src="/nova-intro.mp3" preload="none" aria-label="NOVA introduction narration" />
+      <audio ref={novaAudioRef} preload="none" aria-label="NOVA mission narration" />
       <audio
         ref={musicRef}
         src="/938160_Judgement-Orchestral-Dubst.mp3"
@@ -907,6 +980,7 @@ function App() {
           >
             ☀️ Mission 01
           </button>
+          <button type="button" className="voice-toggle" onClick={beginMission03}>📡 Mission 03</button>
           {academyComplete && activeMission === 1 && (
             <button
               type="button"
@@ -945,6 +1019,10 @@ function App() {
                 ? 'Welcome, future astronaut! Meet NOVA and begin your lunar training.'
                 : screen === 'outpost'
                 ? 'Explore the lunar outpost, then choose your training mission.'
+                : activeMission === 3
+                ? mission03Unlocked
+                  ? 'Mission 03 complete! Signal restored and crew protected.'
+                  : 'Commander, align the antenna and restore contact with Earth.'
                 : activeMission === 2
                 ? mission02Unlocked
                   ? 'Mission 02 complete! Every watt counts.'
@@ -986,7 +1064,14 @@ function App() {
               <p>Explore the outpost systems on the left, or begin a mission whenever you're ready.</p>
               <button className="control-primary" type="button" onClick={beginMission01}>☀️ Mission 01 · Solar Alert</button>
               <button className="control-secondary" type="button" onClick={beginMission02}>⚡ Mission 02 · Power Under Pressure</button>
+              <button className="control-secondary" type="button" onClick={beginMission03}>📡 Mission 03 · The Last Signal</button>
             </div>
+          ) : screen === 'mission03' ? (
+            <Mission03 key={mission03Run} onUpdate={setMission03Resources}
+              onComplete={() => setMission03Unlocked(true)}
+              onWisdom={() => setShowWisdom(true)}
+              onRestart={beginMission03} onReturn={returnToOutpost}
+              speak={(text) => speak(text)} />
           ) : screen === 'mission02' ? (
             <Mission02
               key={mission02Run}
@@ -1295,12 +1380,16 @@ function App() {
 
       <section className="control-bottom">
         <div className="control-resources" aria-label="Mission resource levels">
-          {(screen === 'mission02'
+          {(screen === 'mission03'
+            ? (Object.keys(mission03Resources) as (keyof M3Resources)[])
+            : screen === 'mission02'
             ? (Object.keys(mission02Resources) as (keyof M2Resources)[])
             : (Object.keys(resources) as (keyof Resources)[])
           ).map((key) => {
             const value =
-              screen === 'mission02'
+              screen === 'mission03'
+                ? mission03Resources[key as keyof M3Resources]
+                : screen === 'mission02'
                 ? mission02Resources[key as keyof M2Resources]
                 : resources[key as keyof Resources];
             const label =
@@ -1338,15 +1427,15 @@ function App() {
         </div>
         <button
           className="control-collection"
-          disabled={screen === 'intro' || screen === 'outpost' || (screen === 'mission02' ? !mission02Unlocked : !wisdomUnlocked)}
-          onClick={screen === 'mission02' ? () => setShowWisdom(true) : openWisdom}
+          disabled={screen === 'intro' || screen === 'outpost' || (screen === 'mission03' ? !mission03Unlocked : screen === 'mission02' ? !mission02Unlocked : !wisdomUnlocked)}
+          onClick={screen === 'mission03' || screen === 'mission02' ? () => setShowWisdom(true) : openWisdom}
         >
           <span>★ MISSION WISDOM</span>
           <strong>{`${
-            Number(wisdomUnlocked) + Number(mission02Unlocked)
+            Number(wisdomUnlocked) + Number(mission02Unlocked) + Number(mission03Unlocked)
           } / 7`}</strong>
           <small>
-            {(screen === 'mission02' ? mission02Unlocked : wisdomUnlocked)
+            {(screen === 'mission03' ? mission03Unlocked : screen === 'mission02' ? mission02Unlocked : wisdomUnlocked)
               ? 'View your collected insight'
               : 'Complete a recovery to unlock'}
           </small>
@@ -1452,32 +1541,38 @@ function App() {
             </button>
 
             <span className="panel-kicker">
-              ★ NOVA'S MISSION WISDOM · CARD {activeMission === 2 ? '02' : '01'}
+              ★ NOVA'S MISSION WISDOM · CARD {activeMission === 3 ? '03' : activeMission === 2 ? '02' : '01'}
             </span>
 
             <div className="wisdom-modal-icon">💡</div>
 
             <h2 id="wisdom-title">
-              {activeMission === 2 ? 'Every Watt Counts' : wisdom.title}
+              {activeMission === 3 ? 'Stay Connected, Stay Prepared' : activeMission === 2 ? 'Every Watt Counts' : wisdom.title}
             </h2>
 
             <h3>THE BIG IDEA</h3>
             <p>
-              {activeMission === 2
+              {activeMission === 3
+                ? 'Investigate the signal, test antenna alignment, protect life support and send urgent messages first.'
+                : activeMission === 2
                 ? 'Power, water, oxygen and air revitalization are interconnected. Prioritize critical systems and adapt when conditions change.'
                 : wisdom.principle}
             </p>
 
             <h3>THE SCIENCE BEHIND IT</h3>
             <p>
-              {activeMission === 2
+              {activeMission === 3
+                ? 'Radio signals take roughly 1.3 seconds to travel between Earth and Moon one-way. Antenna pointing, line of sight, power and relays all matter.'
+                : activeMission === 2
                 ? 'Oxygen availability alone does not guarantee breathable air: carbon dioxide must also be removed. NASA Apollo 13 showed why power, consumables and CO₂ control matter.'
                 : wisdom.science}
             </p>
 
             <h3>THINK LIKE A MISSION COMMANDER</h3>
             <p>
-              {activeMission === 2
+              {activeMission === 3
+                ? 'If only one short message can get through, what should Mission Control know first?'
+                : activeMission === 2
                 ? 'Which essential system would you protect first if stored power suddenly dropped?'
                 : wisdom.question}
             </p>
