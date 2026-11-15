@@ -1452,7 +1452,7 @@ function App() {
         </a>.
       </footer>
 
-      {screen !== 'intro' && systemInfoOpen && selected && (
+      {systemInfoOpen && selected && (
         <div
           className="wisdom-overlay"
           onClick={() => setSystemInfoOpen(false)}
