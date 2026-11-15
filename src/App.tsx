@@ -456,7 +456,15 @@ const voiceProfiles: Record<
   Ringo: { pitch: 1.08, rate: 1.03, voiceIndex: 6 },
 };
 
+const introNarration = `Hello, future astronaut! I'm NOVA, your mission training assistant. Welcome to Lunar Outpost, a simulation of humanity's future home on the Moon. You've been invited to join our Junior Astronaut Training Academy. Your mission is to learn how to keep a lunar outpost safe, powered, and ready for exploration. Living on the Moon isn't easy. Every drop of water, every breath of oxygen, and every watt of electricity matters. You'll investigate solar storms, manage limited resources, and make decisions that could protect your crew. Real NASA missions inspire these challenges, but our lunar scenarios are simulations. Are you ready to think like an astronaut? Your training begins now.`;
+
+type Screen = 'intro' | 'outpost' | 'mission01' | 'mission02';
+
 function App() {
+  const [screen, setScreen] = useState<Screen>('intro');
+  const [introPlaying, setIntroPlaying] = useState(false);
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
+  const speechRunRef = useRef(0);
   const [selected, setSelected] = useState<LocationId | null>(null);
   const [systemInfoOpen, setSystemInfoOpen] = useState(false);
   const [resources, setResources] = useState<Resources>(initialResources);
@@ -473,7 +481,7 @@ function App() {
   const [recoveryCompleted, setRecoveryCompleted] = useState(false);
   const [wisdomUnlocked, setWisdomUnlocked] = useState(false);
   const [showWisdom, setShowWisdom] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
   const [musicVolume, setMusicVolume] = useState(20);
@@ -490,10 +498,20 @@ function App() {
   const recovery =
     decisionIndex !== null ? recoveryChallenges[decisionIndex] : null;
 
+  function stopNarration() {
+    speechRunRef.current += 1;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (introAudioRef.current) {
+      introAudioRef.current.pause();
+      introAudioRef.current.currentTime = 0;
+    }
+    setIntroPlaying(false);
+  }
+
   function speak(text: string, force = false, speaker: Speaker = 'NOVA') {
     if ((!voiceEnabled && !force) || !('speechSynthesis' in window)) return;
 
-    window.speechSynthesis.cancel();
+    stopNarration();
 
     const utterance = new SpeechSynthesisUtterance(text);
     const profile = voiceProfiles[speaker];
@@ -507,9 +525,9 @@ function App() {
       voice.lang.toLowerCase().startsWith('en')
     );
     const preferred = englishVoices.find((voice) =>
-      /microsoft (aria|jenny|guy|sonia|ryan).*natural/i.test(voice.name)
+      /microsoft (aria|jenny|sonia).*natural/i.test(voice.name)
     ) ?? englishVoices.find((voice) =>
-      /google (us|uk) english|samantha|ava|allison|serena|daniel/i.test(voice.name)
+      /samantha|ava|allison|serena|google us english/i.test(voice.name)
     ) ?? englishVoices.find((voice) =>
       /natural|premium|enhanced/i.test(voice.name)
     );
@@ -519,6 +537,9 @@ function App() {
         : (englishVoices[profile.voiceIndex % englishVoices.length]);
     }
 
+    const run = speechRunRef.current;
+    utterance.onend = () => { if (run === speechRunRef.current) setIntroPlaying(false); };
+    utterance.onerror = () => { if (run === speechRunRef.current) setIntroPlaying(false); };
     window.speechSynthesis.speak(utterance);
   }
 
@@ -582,6 +603,44 @@ function App() {
     };
   }, []);
 
+  function playIntro() {
+    stopNarration();
+    if (!voiceEnabled) setVoiceEnabled(true);
+    const run = speechRunRef.current;
+    const fallback = () => {
+      if (run !== speechRunRef.current) return;
+      speak(introNarration, true);
+      setIntroPlaying(true);
+    };
+    const audio = introAudioRef.current;
+    if (!audio) { fallback(); return; }
+    // Use a premium prerecorded voice if /public/nova-intro.mp3 exists.
+    // Otherwise avoid a missing-file audio request and use browser speech.
+    void fetch('/nova-intro.mp3', { method: 'HEAD' })
+      .then((response) => {
+        if (run !== speechRunRef.current) return;
+        if (!response.ok || !response.headers.get('content-type')?.includes('audio')) {
+          fallback(); return;
+        }
+        audio.onended = () => { if (run === speechRunRef.current) setIntroPlaying(false); };
+        audio.onerror = fallback;
+        setIntroPlaying(true);
+        void audio.play().catch(fallback);
+      })
+      .catch(fallback);
+  }
+
+  function openIntro() {
+    stopNarration();
+    setScreen('intro');
+    setShowWisdom(false);
+    setSystemInfoOpen(false);
+    setSelected(null);
+    setActiveMission(1);
+    // Navigation is user initiated; browsers allow speech after this click.
+    playIntro();
+  }
+
   function toggleMusic() {
     const audio = musicRef.current;
     if (!audio) return;
@@ -614,14 +673,12 @@ function App() {
 
   function toggleVoice() {
     if (voiceEnabled) {
-      window.speechSynthesis?.cancel();
+      stopNarration();
       setVoiceEnabled(false);
     } else {
       setVoiceEnabled(true);
-      speak(
-        'Hello, Commander! I am NOVA, your mission guide. Ready to explore the Moon?',
-        true
-      );
+      if (screen === 'intro') playIntro();
+      else speak('NOVA voice activated, Commander.', true);
     }
   }
 
@@ -639,6 +696,7 @@ function App() {
 
   function finishAcademy() {
     if (academyViewed.length !== academyCrew.length) return;
+    setScreen('mission01');
     setAcademyComplete(true);
     setAcademyRevisit(false);
     speak(
@@ -647,6 +705,7 @@ function App() {
   }
 
   function startMission() {
+    setScreen('mission01');
     setStarted(true);
     setInvestigationComplete(false);
     setReviewedEvidence([]);
@@ -721,7 +780,8 @@ function App() {
   }
 
   function beginMission02() {
-    window.speechSynthesis?.cancel();
+    stopNarration();
+    setScreen('mission02');
     setActiveMission(2);
     setMission02Resources({ ...initialM2 });
     setMission02Run((n) => n + 1);
@@ -734,7 +794,8 @@ function App() {
   }
 
   function beginMission01() {
-    window.speechSynthesis?.cancel();
+    stopNarration();
+    setScreen('mission01');
     setActiveMission(1);
     setShowWisdom(false);
     setSystemInfoOpen(false);
@@ -756,7 +817,8 @@ function App() {
   }
 
   function returnToOutpost() {
-    window.speechSynthesis?.cancel();
+    stopNarration();
+    setScreen('outpost');
     setActiveMission(1);
     setShowWisdom(false);
     setSystemInfoOpen(false);
@@ -766,7 +828,7 @@ function App() {
   }
 
   function restart() {
-    window.speechSynthesis?.cancel();
+    stopNarration();
     setResources({ ...initialResources });
     setSelected(null);
     setSystemInfoOpen(false);
@@ -784,6 +846,7 @@ function App() {
 
   return (
     <main className="control-app">
+      <audio ref={introAudioRef} src="/nova-intro.mp3" preload="none" aria-label="NOVA introduction narration" />
       <audio
         ref={musicRef}
         src="/938160_Judgement-Orchestral-Dubst.mp3"
@@ -801,6 +864,7 @@ function App() {
         </div>
 
         <div className="nova-header-actions">
+          <button type="button" className={`voice-toggle ${screen === 'intro' ? 'nova-nav-active' : ''}`} onClick={openIntro} aria-current={screen === 'intro' ? 'page' : undefined}>✨ Intro</button>
           <button
             type="button"
             className="voice-toggle"
@@ -877,7 +941,11 @@ function App() {
           <div className="scene-nova-line">
             <strong>🤖 NOVA</strong>
             <span aria-live="polite">
-              {activeMission === 2
+              {screen === 'intro'
+                ? 'Welcome, future astronaut! Meet NOVA and begin your lunar training.'
+                : screen === 'outpost'
+                ? 'Explore the lunar outpost, then choose your training mission.'
+                : activeMission === 2
                 ? mission02Unlocked
                   ? 'Mission 02 complete! Every watt counts.'
                   : 'Commander, protect the outpost power and life-support systems.'
@@ -897,7 +965,29 @@ function App() {
         </div>
 
         <section className="control-mission-panel">
-          {activeMission === 2 ? (
+          {screen === 'intro' ? (
+            <div className="nova-intro">
+              <span className="panel-kicker">MISSION CONTROL · INCOMING TRANSMISSION</span>
+              <h2>Welcome, Future Astronaut!</h2>
+              <p className="nova-intro-lead">I'm NOVA, your lunar mission training assistant.</p>
+              <p>You're joining a simulated Junior Astronaut Training Academy. Your challenge: keep a lunar outpost safe, powered, and ready for exploration.</p>
+              <p>Every breath of oxygen, drop of water, and watt of electricity counts. Investigate real NASA science, weigh your options, and protect your crew.</p>
+              <p className="nova-intro-highlight">Think like an astronaut. Decide like a mission commander.</p>
+              <div className="nova-intro-actions">
+                <button className="control-secondary" type="button" onClick={introPlaying ? stopNarration : playIntro}>{introPlaying ? '■ Stop NOVA' : '▶ Hear NOVA'}</button>
+                <button className="control-primary" type="button" onClick={returnToOutpost}>🚀 Begin Training</button>
+              </div>
+              <small className="nova-intro-note">Independent NASA-inspired educational simulation. Not official NASA astronaut recruitment.</small>
+            </div>
+          ) : screen === 'outpost' ? (
+            <div className="nova-intro">
+              <span className="panel-kicker">LUNAR OUTPOST · MISSION SELECT</span>
+              <h2>Choose Your Training Mission</h2>
+              <p>Explore the outpost systems on the left, or begin a mission whenever you're ready.</p>
+              <button className="control-primary" type="button" onClick={beginMission01}>☀️ Mission 01 · Solar Alert</button>
+              <button className="control-secondary" type="button" onClick={beginMission02}>⚡ Mission 02 · Power Under Pressure</button>
+            </div>
+          ) : screen === 'mission02' ? (
             <Mission02
               key={mission02Run}
               onUpdate={setMission02Resources}
@@ -1205,12 +1295,12 @@ function App() {
 
       <section className="control-bottom">
         <div className="control-resources" aria-label="Mission resource levels">
-          {(activeMission === 2
+          {(screen === 'mission02'
             ? (Object.keys(mission02Resources) as (keyof M2Resources)[])
             : (Object.keys(resources) as (keyof Resources)[])
           ).map((key) => {
             const value =
-              activeMission === 2
+              screen === 'mission02'
                 ? mission02Resources[key as keyof M2Resources]
                 : resources[key as keyof Resources];
             const label =
@@ -1248,15 +1338,15 @@ function App() {
         </div>
         <button
           className="control-collection"
-          disabled={activeMission === 2 ? !mission02Unlocked : !wisdomUnlocked}
-          onClick={activeMission === 2 ? () => setShowWisdom(true) : openWisdom}
+          disabled={screen === 'intro' || screen === 'outpost' || (screen === 'mission02' ? !mission02Unlocked : !wisdomUnlocked)}
+          onClick={screen === 'mission02' ? () => setShowWisdom(true) : openWisdom}
         >
           <span>★ MISSION WISDOM</span>
           <strong>{`${
             Number(wisdomUnlocked) + Number(mission02Unlocked)
           } / 7`}</strong>
           <small>
-            {(activeMission === 2 ? mission02Unlocked : wisdomUnlocked)
+            {(screen === 'mission02' ? mission02Unlocked : wisdomUnlocked)
               ? 'View your collected insight'
               : 'Complete a recovery to unlock'}
           </small>
@@ -1273,7 +1363,7 @@ function App() {
         </a>.
       </footer>
 
-      {systemInfoOpen && selected && (
+      {screen !== 'intro' && systemInfoOpen && selected && (
         <div
           className="wisdom-overlay"
           onClick={() => setSystemInfoOpen(false)}
@@ -1344,7 +1434,7 @@ function App() {
         </div>
       )}
 
-      {showWisdom && (
+      {screen !== 'intro' && showWisdom && (
         <div className="wisdom-overlay" onClick={closeWisdom}>
           <div
             className="wisdom-modal"
