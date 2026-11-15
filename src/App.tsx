@@ -849,7 +849,7 @@ function App() {
     setSystemInfoOpen(false);
     setSelected(null);
     speak(
-      'Mission two. Power Under Pressure. An electrical fault is draining our lunar outpost. We must protect breathable air, water and the crew. Here is some training for you. Investigate real NASA history to get some knowledge on how to manage the crisis.'
+      'Mission two. Power Under Pressure. An electrical fault is draining our lunar outpost. We must protect breathable air, water and the crew. Here is some training for you. Investigate real NASA history to get some knowledge on how to manage the crisis. In this mission, you’ll learn three decision-making skills: systems thinking, understanding opportunity cost, and recognizing safety thresholds.'
     );
   }
 
@@ -862,7 +862,7 @@ function App() {
     setShowWisdom(false);
     setSystemInfoOpen(false);
     setSelected(null);
-    speak('Mission three. The Last Signal. Our simulated lunar outpost has lost contact with Earth. Investigate NASA communication science, align the antenna, and protect your crew.');
+    speak('Mission three. The Last Signal. Our simulated lunar outpost has lost contact with Earth. Investigate NASA communication science, align the antenna, and protect your crew. In this mission, you’ll learn three decision-making skills: testing hypotheses, making reversible choices, and adapting when things change.');
   }
 
   function beginMission01() {
@@ -884,7 +884,7 @@ function App() {
     // Reintroduce Mission 01 while preserving earned achievements.
     setAcademyRevisit(true);
     speak(
-      'Welcome to Mission One, Commander! Meet the Space Weather Crew, then investigate the NASA solar alert.'
+      'Welcome to Mission One, Commander! Meet the Space Weather Crew, then investigate the NASA solar alert. In this mission, you’ll learn three decision-making skills: evidence-based reasoning, navigating uncertainty, and working with hypotheses.'
     );
   }
 
@@ -969,21 +969,21 @@ function App() {
           <button
             type="button"
             className="voice-toggle"
-            onClick={beginMission02}
+            onClick={beginMission01}
           >
           ☀️ Mission 01
           </button>
           <button 
             type="button"
             className="voice-toggle"
-            onClick={beginMission03}
+            onClick={beginMission02}
             >
             ⚡ Mission 02
           </button>
           <button
             type="button"
             className="voice-toggle"
-            onClick={beginMission01}
+            onClick={beginMission03}
           >
      
           📡 Mission 03
