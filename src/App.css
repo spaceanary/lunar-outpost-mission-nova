@@ -728,3 +728,34 @@ body { overflow-x: hidden; }
 .nova-system-training>strong{color:#eafe07;font-size:13px}.nova-system-training p{font-size:13px;color:#dce8fc;line-height:1.5}
 .nova-header-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 @media(max-width:650px){.nova-header-actions .voice-toggle{font-size:11px;padding:8px}}
+
+/* Mission 02: readable 3 + 2 resource layout (overrides five-across). */
+.control-resources:has(.control-resource-water) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.control-resources:has(.control-resource-water) .control-resource {
+  padding: 8px 4px;
+  gap: 3px;
+}
+.control-resources:has(.control-resource-water) .resource-name {
+  font-size: 9px;
+  min-height: 24px;
+  overflow-wrap: normal;
+}
+.control-resources:has(.control-resource-water) .resource-tube {
+  width: clamp(19px, 1.8vw, 27px);
+  height: clamp(54px, 12vh, 112px);
+  min-height: 48px;
+}
+.control-resources:has(.control-resource-water) .resource-gauge-row { gap: 4px; }
+.control-resources:has(.control-resource-water) .resource-percent { font-size: clamp(12px, 1vw, 16px); }
+@media (min-width: 1051px) {
+  .control-resources:has(.control-resource-water) .control-resource { padding: 8px 4px; }
+  .control-resources:has(.control-resource-water) .resource-name { font-size: 9px; }
+  .control-resources:has(.control-resource-water) .resource-tube { width: clamp(19px, 1.8vw, 27px); height: clamp(54px, 12vh, 112px); }
+}
+@media (max-width: 500px) {
+  .control-resources:has(.control-resource-water) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
