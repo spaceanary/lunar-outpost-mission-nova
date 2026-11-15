@@ -20,7 +20,7 @@ const hotspots: {
   top: string;
 }[] = [
   { id: 'shielding', label: 'Radiation Shielding', left: '20%', top: '48%' },
-  { id: 'communications', label: 'Communication', left: '54%', top: '43%' },
+  { id: 'communications', label: 'Communication · Mission 03', left: '54%', top: '43%' },
   { id: 'food', label: 'Food Production', left: '70%', top: '60%' },
   { id: 'habitat', label: 'Life Support', left: '43%', top: '58%' },
   { id: 'solar', label: 'Power Budgeting', left: '19%', top: '71%' },
@@ -75,6 +75,29 @@ export default function LunarScene({ selected, onSelect, alert = false }: Props)
                 border: 'none',
               }}
             />
+            {id === 'communications' && (
+              <span
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  left: '24px',
+                  top: '-18px',
+                  whiteSpace: 'nowrap',
+                  background: '#101b3c',
+                  color: '#eaff00',
+                  border: '1px solid #eaff00',
+                  borderRadius: 5,
+                  padding: '3px 6px',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: '.03em',
+                  pointerEvents: 'none',
+                  boxShadow: '0 2px 8px #0009',
+                }}
+              >
+                📡 MISSION 03
+              </span>
+            )}
           </button>
         ))}
       </div>
