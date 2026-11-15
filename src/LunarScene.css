@@ -1,0 +1,254 @@
+.lunar-scene {
+  position: relative;
+  width: 100%;
+  height: clamp(380px, 55vw, 580px);
+  overflow: hidden;
+  border: 1px solid #3d65a5;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 75% 25%, #1d417a, transparent 55%),
+    linear-gradient(180deg, #050c20 0%, #122b55 75%, #344969 100%);
+  isolation: isolate;
+}
+
+.lunar-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(2px 2px at 12% 16%, white 99%, transparent),
+    radial-gradient(2px 2px at 28% 36%, white 99%, transparent),
+    radial-gradient(2px 2px at 49% 12%, white 99%, transparent),
+    radial-gradient(2px 2px at 72% 20%, white 99%, transparent),
+    radial-gradient(2px 2px at 90% 40%, white 99%, transparent);
+  opacity: 0.75;
+}
+
+.lunar-earth {
+  position: absolute;
+  right: 12%;
+  top: 12%;
+  width: 105px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+      ellipse at 32% 38%,
+      #85d5b5 0 15%,
+      transparent 16%
+    ),
+    radial-gradient(ellipse at 64% 65%, #72bba7 0 18%, transparent 19%),
+    radial-gradient(circle at 35% 25%, #b4e8ff, #2e96f5 50%, #0b327c);
+  box-shadow: 0 0 45px #2e96f544;
+  animation: earth-drift 8s ease-in-out infinite;
+}
+
+.lunar-horizon {
+  position: absolute;
+  bottom: -36%;
+  left: -15%;
+  width: 130%;
+  height: 72%;
+  border-radius: 50% 50% 0 0;
+  background: radial-gradient(ellipse at 28% 12%, #8c98ab, transparent 50%),
+    linear-gradient(#626e82, #27374f);
+  box-shadow: inset 0 16px 35px #c0cad344;
+}
+
+.scene-top-label,
+.scene-bottom-label {
+  position: absolute;
+  z-index: 2;
+  color: #d6e6ff;
+  font: 600 11px 'Fira Code', monospace;
+  letter-spacing: 1.4px;
+}
+
+.scene-top-label {
+  top: 24px;
+  left: 26px;
+}
+
+.scene-bottom-label {
+  bottom: 22px;
+  left: 26px;
+}
+
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: #eafe07;
+  box-shadow: 0 0 12px #eafe07;
+}
+
+.nova-companion {
+  position: absolute;
+  top: 17%;
+  left: 11%;
+  display: flex;
+  align-items: center;
+  z-index: 3;
+  animation: nova-hover 3s ease-in-out infinite;
+  filter: drop-shadow(0 8px 15px #0007);
+}
+
+.nova-wing {
+  width: 33px;
+  height: 48px;
+  border: 2px solid #91c3ff;
+  background: repeating-linear-gradient(
+      90deg,
+      transparent 0 10px,
+      #8ab8ef88 11px 12px
+    ),
+    #0042a6;
+}
+
+.nova-core {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border: 3px solid #9ed3ff;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f1f8ff, #8bb5ec);
+}
+
+.nova-eyes {
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 36px;
+  border-radius: 11px;
+  background: #07173f;
+  color: #eafe07;
+  font-size: 24px;
+}
+
+.nova-caption {
+  position: absolute;
+  top: calc(17% + 75px);
+  left: 11%;
+  color: #ffffff;
+  font: 700 11px 'Fira Code', monospace;
+  letter-spacing: 1px;
+}
+
+.nova-caption span {
+  color: #eafe07;
+}
+
+.location-hotspot {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: white;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.hotspot-symbol {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 2px solid #eafe07;
+  border-radius: 50%;
+  background: #07173fcc;
+  color: #eafe07;
+  font-size: 25px;
+  box-shadow: 0 0 0 8px #eafe0718;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.location-hotspot:hover .hotspot-symbol,
+.location-hotspot.selected .hotspot-symbol {
+  transform: scale(1.12);
+  background: #0042a6;
+}
+
+.location-hotspot:focus-visible {
+  outline: 3px solid #eafe07;
+  outline-offset: 7px;
+  border-radius: 8px;
+}
+
+.hotspot-label {
+  background: #07173fe8;
+  border: 1px solid #547bb7;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lunar-alert {
+  border-color: #ff8064;
+  box-shadow: 0 0 30px #ff634733;
+}
+
+.lunar-alert .scene-top-label {
+  color: #ffb5a4;
+}
+
+@keyframes nova-hover {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes earth-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@media (max-width: 600px) {
+  .lunar-scene {
+    height: 450px;
+  }
+
+  .lunar-earth {
+    width: 75px;
+  }
+
+  .nova-companion {
+    left: 8%;
+  }
+
+  .nova-caption {
+    left: 8%;
+  }
+
+  .hotspot-symbol {
+    width: 46px;
+    height: 46px;
+  }
+
+  .hotspot-label {
+    font-size: 10px;
+    padding: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nova-companion,
+  .lunar-earth {
+    animation: none;
+  }
+}

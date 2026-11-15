@@ -1,0 +1,252 @@
+.m2-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #e6efff;
+}
+.m2-root h2 {
+  margin: 4px 0 0 !important;
+}
+.m2-root p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 4px 0;
+}
+.m2-intro {
+  color: #e5eeff;
+}
+.m2-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.m2-evidence {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+  background: #243d70;
+  border: 1px solid #5278b5;
+  border-radius: 10px;
+  color: #fff;
+  padding: 12px;
+  cursor: pointer;
+}
+.m2-evidence:hover,
+.m2-active {
+  border-color: #eafe07;
+  background: #34548b;
+}
+.m2-evidence strong {
+  font-size: 13px;
+}
+.m2-evidence small {
+  color: #cfe0f8;
+}
+.m2-evidence-number {
+  color: #eafe07;
+  font-weight: 900;
+  font-size: 12px;
+}
+.m2-summary,
+.m2-control-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.m2-summary {
+  background: #102858;
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.m2-summary span {
+  color: #eafe07;
+}
+.m2-help {
+  color: #b9d2f0;
+}
+.m2-control {
+  background: #182d59;
+  border: 1px solid #3e639c;
+  padding: 10px 12px;
+  border-radius: 9px;
+}
+.m2-control-heading {
+  font-size: 13px;
+}
+.m2-control small {
+  display: block;
+  color: #b9d2f0;
+  font-size: 11px;
+  margin: 3px 0 8px;
+}
+.m2-control input {
+  width: 100%;
+  accent-color: #eafe07;
+  cursor: pointer;
+}
+.m2-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.m2-facts span {
+  font-size: 11px;
+  padding: 7px;
+  border: 1px solid #4a6da2;
+  border-radius: 7px;
+  background: #0b1b3d;
+}
+.m2-danger {
+  color: #ffad93 !important;
+}
+.m2-warning {
+  padding: 12px;
+  border-radius: 9px;
+  background: #592c34;
+  border: 1px solid #ff967d;
+  color: #fff0df;
+  font-size: 13px;
+  font-weight: 900;
+}
+.m2-status,
+.m2-research,
+.m2-complete {
+  background: #102858;
+  border: 1px solid #486da5;
+  border-radius: 9px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.m2-complete {
+  border-color: #eafe07;
+}
+.m2-complete > strong {
+  color: #eafe07;
+}
+.m2-research a,
+.m2-complete a {
+  color: #eafe07;
+}
+.m2-disclaimer {
+  font-size: 10px !important;
+  color: #b7c9e4 !important;
+}
+@media (max-width: 450px) {
+  .m2-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mission 02 completion experience */
+.m2-finale {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #eafe07;
+  background: linear-gradient(145deg, #193663, #101d40);
+  border-radius: 14px;
+  padding: 18px;
+}
+.m2-finale-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.m2-finale-heading > span {
+  font-size: 40px;
+}
+.m2-finale-heading h3 {
+  font-size: 25px;
+  color: white;
+  margin: 3px 0;
+}
+.m2-finale > p {
+  font-size: 14px;
+  line-height: 1.55;
+}
+.m2-finale-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.m2-finale-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 5px;
+  background: #0b1b3d;
+  border: 1px solid #486da5;
+  border-radius: 10px;
+  text-align: center;
+}
+.m2-finale-stats span {
+  font-size: 10px;
+  color: #d0e0fa;
+  font-weight: 800;
+}
+.m2-finale-stats strong {
+  font-size: 22px;
+  color: #eafe07;
+}
+.m2-finale-stats small {
+  color: #c7d7ef;
+}
+.m2-finale-wisdom {
+  border: 1px solid #eafe07;
+  border-radius: 10px;
+  padding: 14px;
+  background: #223b6c;
+}
+.m2-finale-wisdom > strong {
+  font-size: 12px;
+  color: #eafe07;
+}
+.m2-finale-wisdom h3 {
+  margin: 7px 0;
+  color: #fff;
+  font-size: 19px;
+}
+.m2-nasa-link {
+  color: #eafe07;
+  font-weight: 700;
+  font-size: 13px;
+}
+.m2-finale .control-primary,
+.m2-finale .control-secondary {
+  width: 100%;
+  margin: 0;
+}
+@media (max-width: 450px) {
+  .m2-finale {
+    padding: 12px;
+  }
+  .m2-finale-stats strong {
+    font-size: 17px;
+  }
+}
+/* Add these rules to your existing Mission02.css, or use the companion patch file. */
+.m2-guidance {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: #102858;
+  border: 1px solid #5278b5;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #dce8fc;
+}
+.m2-guidance strong {
+  color: #eafe07;
+  font-size: 12px;
+}
+.m2-guidance .m2-danger {
+  color: #ffad93;
+}
