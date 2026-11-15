@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import LunarScene, { type LocationId } from './LunarScene';
 import Mission02, { initialM2, type M2Resources } from './Mission02';
 import './App.css';
@@ -441,6 +441,10 @@ function App() {
   const [wisdomUnlocked, setWisdomUnlocked] = useState(false);
   const [showWisdom, setShowWisdom] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(true);
+  const [musicStarted, setMusicStarted] = useState(false);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+  const musicEnabledRef = useRef(true);
   const [activeMission, setActiveMission] = useState<1 | 2>(1);
   const [mission02Resources, setMission02Resources] =
     useState<M2Resources>(initialM2);
@@ -489,6 +493,80 @@ function App() {
       }
     };
   }, []);
+
+  // Music is enabled by default. Browser autoplay rules require the first
+  // user gesture before audible playback; the gesture starts at 0:14 instantly.
+  // The audio element stays mounted when missions change.
+  useEffect(() => {
+    const audio = musicRef.current;
+    if (!audio) return;
+    audio.volume = 0.2;
+
+    const seekPastIntro = () => {
+      if (audio.currentTime < 14) audio.currentTime = 14;
+    };
+    const onPlaying = () => setMusicStarted(true);
+    const onPause = () => setMusicStarted(false);
+    const onError = () => {
+      setMusicStarted(false);
+      console.error('Mission NOVA music file error:', audio.error);
+    };
+    const startMusic = () => {
+      if (!musicEnabledRef.current || !audio.paused) return;
+      // Setting currentTime is supported before metadata loads in modern browsers.
+      // The metadata listener also seeks, so the 14-second intro is never played.
+      try { seekPastIntro(); } catch { /* seek once metadata is available */ }
+      void audio.play().catch((error) => {
+        setMusicStarted(false);
+        console.warn('Mission NOVA music playback blocked:', error);
+      });
+    };
+    const onEnded = () => {
+      audio.currentTime = 14;
+      if (musicEnabledRef.current) startMusic();
+    };
+
+    audio.addEventListener('loadedmetadata', seekPastIntro);
+    audio.addEventListener('playing', onPlaying);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('error', onError);
+    audio.addEventListener('ended', onEnded);
+    document.addEventListener('pointerdown', startMusic);
+    document.addEventListener('keydown', startMusic);
+    if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) seekPastIntro();
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', seekPastIntro);
+      audio.removeEventListener('playing', onPlaying);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('error', onError);
+      audio.removeEventListener('ended', onEnded);
+      document.removeEventListener('pointerdown', startMusic);
+      document.removeEventListener('keydown', startMusic);
+    };
+  }, []);
+
+  function toggleMusic() {
+    const audio = musicRef.current;
+    if (!audio) return;
+    // Check actual playback, not the default enabled preference. The first
+    // click on this button must START music, not turn it off.
+    if (!audio.paused) {
+      musicEnabledRef.current = false;
+      setMusicEnabled(false);
+      audio.pause();
+      return;
+    }
+    musicEnabledRef.current = true;
+    setMusicEnabled(true);
+    try {
+      if (audio.currentTime < 14) audio.currentTime = 14;
+    } catch { /* metadata listener will seek */ }
+    void audio.play().catch((error) => {
+      setMusicStarted(false);
+      console.warn('Mission NOVA music playback blocked:', error);
+    });
+  }
 
   function toggleVoice() {
     if (voiceEnabled) {
@@ -662,6 +740,12 @@ function App() {
 
   return (
     <main className="control-app">
+      <audio
+        ref={musicRef}
+        src="/938160_Judgement-Orchestral-Dubst.mp3"
+        preload="auto"
+        aria-label="Mission NOVA background music"
+      />
       <header className="control-header">
         <div>
           <span className="control-kicker">
@@ -673,6 +757,15 @@ function App() {
         </div>
 
         <div className="nova-header-actions">
+          <button
+            type="button"
+            className="voice-toggle"
+            onClick={toggleMusic}
+            aria-pressed={musicEnabled}
+            title={musicStarted ? 'Pause background music' : 'Play background music from 0:14'}
+          >
+            {musicStarted ? '🎵 Music On' : musicEnabled ? '🎵 Music Ready' : '🎵 Music Off'}
+          </button>
           <button
             type="button"
             className="voice-toggle"
@@ -1118,6 +1211,10 @@ function App() {
         Independent educational prototype for NASA Space Apps. NASA observations
         are historical; lunar conditions, resource values and risk scores are
         illustrative, not flight or radiation calculations.
+        {' '}Music: “Judgement” by HJfod —{' '}
+        <a href="https://www.newgrounds.com/audio/listen/938160" target="_blank" rel="noopener noreferrer">
+          Newgrounds
+        </a>.
       </footer>
 
       {systemInfoOpen && selected && (
